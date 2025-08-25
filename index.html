@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="de" class="transition-colors duration-300">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pflegeeinrichtungssuche</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        /* Eigene Stile für Ladeanzeige und Nachrichten */
+        .message-box {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        .message-box.loading {
+            background-color: #d1e7dd;
+            color: #0f5132;
+        }
+        .message-box.error {
+            background-color: #f8d7da;
+            color: #842029;
+        }
+        .message-box.info {
+            background-color: #cff4fc;
+            color: #084298;
+        }
+
+        /* Dark Mode-Stile für die gesamte App */
+        html.dark body {
+            background-color: #121212;
+        }
+        html.dark .bg-white {
+            background-color: #1f1f1f;
+        }
+        html.dark .text-gray-800 {
+            color: #e0e0e0;
+        }
+        html.dark .text-gray-700 {
+            color: #c0c0c0;
+        }
+        html.dark .text-gray-600 {
+            color: #a0a0a0;
+        }
+        html.dark .text-gray-500 {
+            color: #909090;
+        }
+        html.dark .border-gray-300 {
+            border-color: #404040;
+        }
+        html.dark .bg-gray-200 {
+            background-color: #333333;
+        }
+        html.dark .bg-gray-50 {
+            background-color: #2b2b2b;
+        }
+        html.dark .border-gray-200 {
+            border-color: #383838;
+        }
+        html.dark .bg-blue-600 {
+            background-color: #1e88e5;
+        }
+        html.dark .hover\:bg-blue-700:hover {
+            background-color: #1565c0;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4 transition-colors duration-300">
+
+    <!-- Hauptcontainer für die App -->
+    <div class="bg-white dark:bg-gray-900 p-8 rounded-xl shadow-2xl w-full max-w-xl transition-colors duration-300">
+        
+        <!-- Dark Mode-Schalter -->
+        <div class="flex justify-end mb-4">
+            <button id="theme-toggle" class="p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <svg id="moon-icon" class="w-6 h-6 text-gray-800 dark:text-gray-200 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                </svg>
+                <svg id="sun-icon" class="w-6 h-6 text-gray-800 dark:text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+            </button>
+        </div>
+
+        <h1 class="text-3xl font-bold text-center text-gray-800 dark:text-gray-200 mb-6">Einrichtungssuche</h1>
+
+        <!-- Eingabebereich für Ort und Umkreis -->
+        <div class="flex flex-col space-y-4">
+            <div>
+                <label for="location-input" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Dein Standort (Stadt oder Adresse)</label>
+                <input type="text" id="location-input" placeholder="z.B. Köln, Möwenweg 3" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+            </div>
+
+            <div>
+                <div class="flex items-center justify-between">
+                    <label for="radius-slider" class="text-gray-700 dark:text-gray-300 font-semibold">Umkreis in km:</label>
+                    <span id="radius-value" class="font-mono text-lg font-bold text-blue-600 dark:text-blue-400">10</span>
+                </div>
+                <input type="range" id="radius-slider" min="1" max="50" value="10" class="w-full mt-2 appearance-none h-2 bg-gray-200 dark:bg-gray-700 rounded-lg cursor-pointer focus:outline-none">
+            </div>
+
+            <!-- Neuer Filter für Einrichtungstypen mit Checkboxen -->
+            <div>
+                <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Einrichtungstyp:</label>
+                <div id="type-filters" class="grid grid-cols-2 sm:grid-cols-2 gap-2 text-sm text-gray-800 dark:text-gray-200">
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" checked class="form-checkbox text-blue-600 rounded-md mr-2" data-type="Senioren-/Pflegeheim">
+                        Senioren-/Pflegeheim
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" checked class="form-checkbox text-blue-600 rounded-md mr-2" data-type="Kindergarten">
+                        Kindergarten
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" checked class="form-checkbox text-blue-600 rounded-md mr-2" data-type="Behinderteneinrichtung">
+                        Behinderteneinrichtung
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" checked class="form-checkbox text-blue-600 rounded-md mr-2" data-type="Tagespflege">
+                        Tagespflege
+                    </label>
+                </div>
+            </div>
+
+            <button id="search-button" class="mt-4 w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 dark:bg-blue-800 dark:hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 transition-colors duration-200">
+                Suchen
+            </button>
+        </div>
+        
+        <!-- Bereich für Nachrichten (Laden, Fehler, Info) -->
+        <div id="message-container" class="mt-6"></div>
+
+        <!-- Bereich für die Suchergebnisse -->
+        <div id="results-container" class="mt-6 space-y-4">
+            <p class="text-center text-gray-500 dark:text-gray-400">Gib einen Ort und einen Umkreis ein, um nach Einrichtungen zu suchen.</p>
+        </div>
+    </div>
+
+    <script>
+        // Der komplette JavaScript-Code für die Funktionalität
+        // DOM-Elemente abrufen
+        const html = document.documentElement;
+        const locationInput = document.getElementById('location-input');
+        const radiusSlider = document.getElementById('radius-slider');
+        const radiusValue = document.getElementById('radius-value');
+        const typeFilterContainer = document.getElementById('type-filters');
+        const searchButton = document.getElementById('search-button');
+        const resultsContainer = document.getElementById('results-container');
+        const messageContainer = document.getElementById('message-container');
+        const themeToggle = document.getElementById('theme-toggle');
+        const sunIcon = document.getElementById('sun-icon');
+        const moonIcon = document.getElementById('moon-icon');
+        const typeCheckboxes = Array.from(typeFilterContainer.querySelectorAll('input[data-type]'));
+
+        // Funktion zum Umschalten des Themas
+        function toggleTheme() {
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            }
+        }
+
+        // Theme-Präferenz beim Laden der Seite anwenden
+        function applyTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                html.classList.add('dark');
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            } else {
+                html.classList.remove('dark');
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+            }
+        }
+
+        // Beim Laden der Seite das gespeicherte Thema anwenden
+        document.addEventListener('DOMContentLoaded', applyTheme);
+
+        // Event-Listener für den Theme-Schalter
+        themeToggle.addEventListener('click', toggleTheme);
+        
+        // Umkreiswert aktualisieren, wenn der Schieberegler bewegt wird
+        radiusSlider.addEventListener('input', () => {
+            radiusValue.textContent = radiusSlider.value;
+        });
+
+        // Event-Listener für den Such-Button
+        searchButton.addEventListener('click', () => {
+            searchFacilities();
+        });
+
+        // Event-Listener für die Enter-Taste im Eingabefeld
+        locationInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                searchFacilities();
+            }
+        });
+
+        // Funktion, um Nachrichten anzuzeigen
+        function showMessage(type, text) {
+            messageContainer.innerHTML = `<div class="message-box ${type}">${text}</div>`;
+        }
+
+        /**
+         * Hauptfunktion zur Durchführung der Suche
+         * 1. Geocodiert den eingegebenen Ort.
+         * 2. Fragt die Overpass API nach Einrichtungen im Umkreis ab.
+         * 3. Filtert und zeigt die Ergebnisse an.
+         */
+        async function searchFacilities() {
+            const location = locationInput.value.trim();
+            const radius = parseFloat(radiusSlider.value) * 1000; // Umkreis in Metern für die API
+            
+            const checkedTypes = Array.from(typeFilterContainer.querySelectorAll('input[data-type]:checked'))
+                .map(cb => cb.dataset.type);
+
+            if (location === "") {
+                showMessage('info', 'Bitte gib einen Ort oder eine Adresse ein.');
+                return;
+            }
+
+            if (checkedTypes.length === 0) {
+                showMessage('info', 'Bitte wähle mindestens einen Einrichtungstyp aus.');
+                return;
+            }
+
+            // UI-Feedback anzeigen
+            showMessage('loading', 'Suche läuft... Dies kann je nach Umkreis etwas dauern.');
+            resultsContainer.innerHTML = '';
+            searchButton.disabled = true;
+
+            try {
+                // Schritt 1: Geocoding des eingegebenen Ortes über die OpenStreetMap-API
+                const geocodeUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location)}&format=json&limit=1`;
+                const geocodeResponse = await fetch(geocodeUrl);
+                
+                if (!geocodeResponse.ok) {
+                    throw new Error(`HTTP-Fehler beim Geocoding! Status: ${geocodeResponse.status}`);
+                }
+                
+                const geocodeData = await geocodeResponse.json();
+
+                if (geocodeData.length === 0) {
+                    showMessage('error', `Der Ort "${location}" wurde nicht gefunden. Bitte überprüfe die Schreibweise.`);
+                    return;
+                }
+
+                const userLat = parseFloat(geocodeData[0].lat);
+                const userLon = parseFloat(geocodeData[0].lon);
+
+                // Schritt 2: Abfrage der Einrichtungen über die Overpass API
+                // Die Abfrage wurde geändert, um alle Tags zu erhalten (out;)
+                const overpassQuery = `
+                    [out:json][timeout:25];
+                    (
+                      node["amenity"="nursing_home"](around:${radius},${userLat},${userLon});
+                      node["amenity"="kindergarten"](around:${radius},${userLat},${userLon});
+                      node["amenity"="social_facility"]["social_facility"="group_home"](around:${radius},${userLat},${userLon});
+                      node["amenity"="social_facility"]["social_facility"="day_care"](around:${radius},${userLat},${userLon});
+                    );
+                    out;
+                `;
+                const overpassUrl = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`;
+                const overpassResponse = await fetch(overpassUrl);
+
+                if (!overpassResponse.ok) {
+                    throw new Error(`HTTP-Fehler bei Overpass-Abfrage! Status: ${overpassResponse.status}`);
+                }
+                
+                const overpassData = await overpassResponse.json();
+                
+                const allFoundFacilities = overpassData.elements.map(element => {
+                    const type = getTypeFromTags(element.tags);
+                    return {
+                        name: element.tags.name || 'Unbekannte Einrichtung',
+                        type: type,
+                        address: formatAddress(element.tags),
+                        phone: element.tags['contact:phone'] || null,
+                        email: element.tags['contact:email'] || null,
+                        lat: element.lat,
+                        lon: element.lon
+                    };
+                });
+                
+                // Schritt 3: Filterung der Ergebnisse nach Typ
+                const finalResults = allFoundFacilities.filter(facility => {
+                    return checkedTypes.includes(facility.type);
+                });
+                
+                // Schritt 4: Anzeige der Ergebnisse
+                if (finalResults.length === 0) {
+                    showMessage('info', `Keine passenden Einrichtungen im Umkreis von ${radius / 1000} km um "${location}" gefunden.`);
+                } else {
+                    showMessage('info', `${finalResults.length} passende Einrichtungen im Umkreis von ${radius / 1000} km um "${location}" gefunden.`);
+                    displayResults(finalResults);
+                }
+
+            } catch (error) {
+                console.error('Fehler bei der Suche:', error);
+                showMessage('error', 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.');
+            } finally {
+                searchButton.disabled = false;
+            }
+        }
+
+        /**
+         * Hilfsfunktion, um den Typ der Einrichtung aus den Tags zu bestimmen.
+         * @param {object} tags - Die Tags des OSM-Elements.
+         * @returns {string} Der Typ der Einrichtung.
+         */
+        function getTypeFromTags(tags) {
+            if (tags.amenity === 'nursing_home') return 'Senioren-/Pflegeheim';
+            if (tags.amenity === 'kindergarten') return 'Kindergarten';
+            if (tags.social_facility === 'group_home' || tags.social_facility === 'assisted_living') return 'Behinderteneinrichtung';
+            if (tags.social_facility === 'day_care') return 'Tagespflege';
+            return 'Sonstige Einrichtung';
+        }
+
+        /**
+         * Hilfsfunktion, um eine Adresse aus den Tags zu formatieren.
+         * @param {object} tags - Die Tags des OSM-Elements.
+         * @returns {string} Die formatierte Adresse.
+         */
+        function formatAddress(tags) {
+            const street = tags['addr:street'] || '';
+            const houseNumber = tags['addr:housenumber'] || '';
+            const postcode = tags['addr:postcode'] || '';
+            const city = tags['addr:city'] || '';
+
+            const parts = [];
+            if (street || houseNumber) {
+                parts.push(`${street} ${houseNumber}`.trim());
+            }
+            if (postcode || city) {
+                parts.push(`${postcode} ${city}`.trim());
+            }
+
+            return parts.join(', ') || 'Adresse nicht verfügbar';
+        }
+
+        // Funktion zur Anzeige der gefilterten Ergebnisse
+        function displayResults(results) {
+            resultsContainer.innerHTML = '';
+            if (results.length === 0) {
+                resultsContainer.innerHTML = `<p class="text-center text-gray-500 dark:text-gray-400">Keine passenden Ergebnisse für den ausgewählten Filter.</p>`;
+                return;
+            }
+            results.forEach(facility => {
+                const facilityElement = document.createElement('div');
+                facilityElement.className = 'p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200';
+                
+                let contactInfo = '';
+                if (facility.phone) {
+                    contactInfo += `<p class="text-gray-600 dark:text-gray-400 mt-1">Telefon: ${facility.phone}</p>`;
+                }
+                if (facility.email) {
+                    contactInfo += `<p class="text-gray-600 dark:text-gray-400 mt-1">E-Mail: <a href="mailto:${facility.email}" class="text-blue-500 hover:underline dark:text-blue-400 dark:hover:text-blue-300">${facility.email}</a></p>`;
+                }
+
+                facilityElement.innerHTML = `
+                    <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200">${facility.name}</h3>
+                    <p class="text-gray-600 dark:text-gray-400 mt-1">Typ: ${facility.type}</p>
+                    <p class="text-gray-600 dark:text-gray-400 mt-1">${facility.address}</p>
+                    ${contactInfo}
+                `;
+                resultsContainer.appendChild(facilityElement);
+            });
+        }
+    </script>
+</body>
+</html>
