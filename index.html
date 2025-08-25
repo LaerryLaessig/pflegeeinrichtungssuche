@@ -304,7 +304,7 @@
                     showMessage('info', `Keine passenden Einrichtungen im Umkreis von ${radius / 1000} km um "${location}" gefunden.`);
                 } else {
                     showMessage('info', `${finalResults.length} passende Einrichtungen im Umkreis von ${radius / 1000} km um "${location}" gefunden.`);
-                    displayResults(finalResults);
+                    displayResults(finalResults, location);
                 }
 
             } catch (error) {
@@ -351,7 +351,7 @@
         }
 
         // Funktion zur Anzeige der gefilterten Ergebnisse
-        function displayResults(results) {
+        function displayResults(results, searchLocation) {
             resultsContainer.innerHTML = '';
             if (results.length === 0) {
                 resultsContainer.innerHTML = `<p class="text-center text-gray-500 dark:text-gray-400">Keine passenden Ergebnisse für den ausgewählten Filter.</p>`;
@@ -360,6 +360,16 @@
             results.forEach(facility => {
                 const facilityElement = document.createElement('div');
                 facilityElement.className = 'p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200';
+                
+                // Suchanfrage für Google erstellen
+                let searchQuery;
+                if (facility.address === 'Adresse nicht verfügbar') {
+                    searchQuery = `${facility.name} ${searchLocation}`;
+                } else {
+                    searchQuery = `${facility.name} ${facility.address}`;
+                }
+
+                const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
                 
                 let contactInfo = '';
                 if (facility.phone) {
@@ -370,7 +380,9 @@
                 }
 
                 facilityElement.innerHTML = `
-                    <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200">${facility.name}</h3>
+                    <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200">
+                        <a href="${googleSearchUrl}" target="_blank" class="hover:underline">${facility.name}</a>
+                    </h3>
                     <p class="text-gray-600 dark:text-gray-400 mt-1">Typ: ${facility.type}</p>
                     <p class="text-gray-600 dark:text-gray-400 mt-1">${facility.address}</p>
                     ${contactInfo}
